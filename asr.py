@@ -8,9 +8,9 @@ from datasets import load_dataset
 import time
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
-model_id = "distil-whisper/distil-large-v2"
+#model_id = "distil-whisper/distil-large-v2"
+model_id = "openai/whisper-large-v3"
 torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
-#model="openai/whisper-large-v3",
 
 
 model = AutoModelForSpeechSeq2Seq.from_pretrained(

@@ -8,15 +8,17 @@ packages = [{include = "node_scripts"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-transformers = "<=4.33.3"
-# transformers = "^4.36.2"
+#transformers = "<=4.33.3"
+transformers = "^4.36.2"
 optimum = "^1.16.1"
 accelerate = "^0.25.0"
 flash-attn = "^2.4.2"
+openai = "^1.8.0"
 
 
 [tool.poetry.group.dev.dependencies]
 datasets = {extras = ["audio"], version = "^2.16.0"}
+ipykernel = "^6.29.0"
 
 [build-system]
 requires = ["poetry-core"]
