@@ -40,14 +40,13 @@ async def build_database():
         build_task = progress.add_task("[cyan]Building database...", total=None)
         
         for guild in bot.guilds:
-            await process_guild(guild)
-            progress.update(build_task, advance=1)
+            await process_guild(guild, progress, build_task)
         
         progress.update(build_task, visible=False)
         elapsed_time = progress.tasks[0].elapsed
         console.print(Panel(f"[bold green]Database building completed in {elapsed_time:.2f} seconds."))
 
-async def process_guild(guild):
+async def process_guild(guild, progress, build_task):
     console.print(Panel(f"[bold blue]Processing server: {guild.name}"))
     
     # Process server
@@ -58,16 +57,17 @@ async def process_guild(guild):
 
     # Process channels
     for channel in guild.channels:
-        await process_channel(channel)
+        await process_channel(channel, progress, build_task)
 
     conn.close()
 
-async def process_channel(channel):
+async def process_channel(channel, progress, build_task):
     if isinstance(channel, discord.CategoryChannel):
         return
 
     try:
-        console.print(f"[bold green]Processing channel: {channel.name}")
+        thread_count = 0
+        progress.update(build_task, description=f"[cyan]Processing channel: {channel.name}")
         
         conn = sqlite3.connect('discord_data.db')
         c = conn.cursor()
@@ -83,18 +83,22 @@ async def process_channel(channel):
 
         # Process active threads
         for thread in channel.threads:
+            thread_count += 1
+            progress.update(build_task, description=f"[cyan]Channel: {channel.name} (Threads: {thread_count}) - Thread: {thread.name}")
             await process_thread(thread)
 
         # Process archived threads
         async for thread in channel.archived_threads(limit=None):
+            thread_count += 1
+            progress.update(build_task, description=f"[cyan]Channel: {channel.name} (Threads: {thread_count}) - Thread: {thread.name}")
             await process_thread(thread)
+
+        console.print(f"[green]Processed channel: {channel.name} (Threads: {thread_count})")
 
     except discord.errors.Forbidden:
         console.print(f"[bold red]Skipped channel: {channel.name} (Insufficient permissions)")
 
 async def process_thread(thread):
-    console.print(f"[bold magenta]Processing thread: {thread.name}")
-    
     conn = sqlite3.connect('discord_data.db')
     c = conn.cursor()
     c.execute("INSERT OR IGNORE INTO threads VALUES (?, ?, ?)",
