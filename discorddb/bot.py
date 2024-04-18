@@ -2,9 +2,14 @@ import discord
 from discord.ext import commands
 import sqlite3
 import json
-from database import create_tables
 import time
+from rich import print
+from rich.console import Console
+from rich.panel import Panel
+from rich.progress import Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
+from database import create_tables
 
+console = Console()
 
 # Read the configuration file
 with open('secrets/config.json') as f:
@@ -20,25 +25,30 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 
 @bot.event
 async def on_ready():
-    print(f'Logged in as {bot.user.name}')
+    console.print(Panel(f"[bold green]Logged in as {bot.user.name}"))
     create_tables()
     await build_database()
 
 async def build_database():
-    print("Building database...")
-    start_time = time.time()
-    
-    for guild in bot.guilds:
-        await process_guild(guild)
-    
-    end_time = time.time()
-    elapsed_time = end_time - start_time
-    print(f"Database building completed in {elapsed_time:.2f} seconds.")
-
-
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        TimeElapsedColumn(),
+        console=console,
+        transient=True,
+    ) as progress:
+        build_task = progress.add_task("[cyan]Building database...", total=None)
+        
+        for guild in bot.guilds:
+            await process_guild(guild)
+            progress.update(build_task, advance=1)
+        
+        progress.update(build_task, visible=False)
+        elapsed_time = progress.tasks[0].elapsed
+        console.print(Panel(f"[bold green]Database building completed in {elapsed_time:.2f} seconds."))
 
 async def process_guild(guild):
-    print(f"Processing server: {guild.name}")
+    console.print(Panel(f"[bold blue]Processing server: {guild.name}"))
     
     # Process server
     conn = sqlite3.connect('discord_data.db')
@@ -57,7 +67,7 @@ async def process_channel(channel):
         return
 
     try:
-        print(f"Processing channel: {channel.name}")
+        console.print(f"[bold green]Processing channel: {channel.name}")
         
         conn = sqlite3.connect('discord_data.db')
         c = conn.cursor()
@@ -80,11 +90,10 @@ async def process_channel(channel):
             await process_thread(thread)
 
     except discord.errors.Forbidden:
-        print(f"Skipped channel: {channel.name} (Insufficient permissions)")
-
+        console.print(f"[bold red]Skipped channel: {channel.name} (Insufficient permissions)")
 
 async def process_thread(thread):
-    print(f"Processing thread: {thread.name}")
+    console.print(f"[bold magenta]Processing thread: {thread.name}")
     
     conn = sqlite3.connect('discord_data.db')
     c = conn.cursor()
