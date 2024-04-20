@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "consumption-tracker"
+version = "0.1.0"
+description = ""
+authors = ["nx1p <email@marci.tech>"]
+readme = "README.md"
+packages = [{include = "consumption_tracker"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+groq = "^0.5.0"
+phidata = "^2.3.77"
+together = "^1.1.2"
+openai = "^1.23.2"
+anthropic = "^0.25.6"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
